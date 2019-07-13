@@ -33,6 +33,7 @@ clustered into reasonable sub-groups.
 ``` r
 library(cluster)
 library(dendextend)
+library(knitr)
 library(naniar)
 library(Quandl)
 library(tidyverse)
@@ -472,8 +473,8 @@ tot_withinss <- map_dbl(1:10, function(k) {
 tot_withinss
 ```
 
-    ##  [1] 1513.40364  664.96245  440.63910  406.82573  224.38924  207.80239
-    ##  [7]  154.14975   73.66879  105.59218   62.59426
+    ##  [1] 1513.40364  664.96245  618.47813  406.03538  205.34032  170.73660
+    ##  [7]  108.18159  108.66915   89.49532   88.94371
 
 ``` r
 # Create a data.frame containing both k and tot_withinss: elbow_df
@@ -562,15 +563,15 @@ clust_kmeans
 ```
 
     ##      Brent_Crude        WTI_Crude      Dubai_Crude   Canadian_Crude 
-    ##                1                1                4                4 
+    ##                4                4                2                1 
     ##          HHB_Gas          NBP_Gas    RBOB_Gasoline European_Naphtha 
-    ##                1                1                1                4 
+    ##                4                4                4                2 
     ##    GulfCoast_Jet     Singapore_FO       CME_Copper      SHFE_Copper 
-    ##                4                4                1                3 
+    ##                2                2                4                2 
     ##     TSI_Iron_Ore     SGX_Iron_Ore   Newcastle_Coal  Indonesian_Coal 
-    ##                4                4                1                3 
+    ##                1                1                4                4 
     ##    CME_Aluminium   SHFE_Aluminium 
-    ##                2                3
+    ##                3                4
 
 ``` r
 # Create a new column reflecting cluster assignments from clust_kmeans: clustered_com_km
@@ -590,27 +591,27 @@ head(tidy_com_km)
 ```
 
     ##        Commodity Cluster      Month      Price
-    ## 1    Brent_Crude       1 2016-01-29 -0.5344344
-    ## 2      WTI_Crude       1 2016-01-29 -0.5764919
-    ## 3    Dubai_Crude       4 2016-01-29 -3.3421457
-    ## 4 Canadian_Crude       4 2016-01-29 -2.1693519
-    ## 5        HHB_Gas       1 2016-01-29 -0.7903238
-    ## 6        NBP_Gas       1 2016-01-29 -0.1503629
+    ## 1    Brent_Crude       4 2016-01-29 -0.5344344
+    ## 2      WTI_Crude       4 2016-01-29 -0.5764919
+    ## 3    Dubai_Crude       2 2016-01-29 -3.3421457
+    ## 4 Canadian_Crude       1 2016-01-29 -2.1693519
+    ## 5        HHB_Gas       4 2016-01-29 -0.7903238
+    ## 6        NBP_Gas       4 2016-01-29 -0.1503629
 
 ``` r
 # View cluster assignments with K-Means Clustering
 sort(clust_kmeans)
 ```
 
-    ##      Brent_Crude        WTI_Crude          HHB_Gas          NBP_Gas 
-    ##                1                1                1                1 
-    ##    RBOB_Gasoline       CME_Copper   Newcastle_Coal    CME_Aluminium 
+    ##   Canadian_Crude     TSI_Iron_Ore     SGX_Iron_Ore      Dubai_Crude 
     ##                1                1                1                2 
-    ##      SHFE_Copper  Indonesian_Coal   SHFE_Aluminium      Dubai_Crude 
-    ##                3                3                3                4 
-    ##   Canadian_Crude European_Naphtha    GulfCoast_Jet     Singapore_FO 
+    ## European_Naphtha    GulfCoast_Jet     Singapore_FO      SHFE_Copper 
+    ##                2                2                2                2 
+    ##    CME_Aluminium      Brent_Crude        WTI_Crude          HHB_Gas 
+    ##                3                4                4                4 
+    ##          NBP_Gas    RBOB_Gasoline       CME_Copper   Newcastle_Coal 
     ##                4                4                4                4 
-    ##     TSI_Iron_Ore     SGX_Iron_Ore 
+    ##  Indonesian_Coal   SHFE_Aluminium 
     ##                4                4
 
 ``` r

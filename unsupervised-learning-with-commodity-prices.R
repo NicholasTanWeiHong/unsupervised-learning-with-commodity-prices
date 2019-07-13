@@ -1,19 +1,4 @@
----
-title: "Unsupervised Learning with Commodity Prices"
-date: Last updated on `r Sys.Date()`
-output: 
-  github_document:
-    toc: TRUE
-    toc_depth: 4
----
-
-## Summary
-
-This project attempts to utilize methods in Unsupervised Learning to deduce and infer similarities in the trading behaviour of commodity contracts. Specifically, it uses Hierarchical Clustering and K-Means Algorithms to investigate if different commodity contracts may be clustered into reasonable sub-groups.
-
-## Package Installs
-
-```{r install_packages, message = FALSE, warning = FALSE}
+## ----install_packages, message = FALSE, warning = FALSE------------------
 library(cluster)
 library(dendextend)
 library(knitr)
@@ -21,13 +6,9 @@ library(naniar)
 library(Quandl)
 library(tidyverse)
 library(xts)
-```
 
-## Code
 
-### 1. Import Data
-
-```{r import_quandl}
+## ----import_quandl-------------------------------------------------------
 # Load the Quandl API Key
 Quandl.api_key("rn2xyN_hG9XfxN_9ibFJ")
 
@@ -46,8 +27,8 @@ commod_info <- data.frame(
 
 # View the first 6 rows of commodities
 head(commod_info)
-```
-```{r import_data}
+
+## ----import_data---------------------------------------------------------
 # Create an empty list to store historical prices per commodity: df_list
 df_list <- list()
 
@@ -55,11 +36,9 @@ df_list <- list()
 for (i in 1:nrow(commod_info)) {
   df_list[[i]] <- Quandl(commod_info$code[i])
 }
-```
 
-### 2. Preprocess Data
 
-```{r merge_datasets}
+## ----merge_datasets------------------------------------------------------
 # Reduce all data.frames in df_list into a single object: com
 com <- df_list %>% 
   reduce(left_join, by = "Date") %>% 
@@ -74,17 +53,13 @@ com <- na.locf(com)
 
 # View the first 10 observations of com
 head(com, n = 10)
-```
-```{r observe_str}
+
+## ----observe_str---------------------------------------------------------
 # Observe the structure of the joined data.frame
 str(com)
-```
 
-From this early pre-processing step, we have a data.frame (com) consisting of a Date Index, as well as 18 variables/columns for each commodity under analysis. To generate the distance matrix for Hierarchical Clustering, we will first need to reduce the data.frame and transpose it such that the time index is reflected in the columns. From a tidyverse perspective, we can then interpret each row (each Commodity Index) as one observation, and each column (each Date Index) as an attribute/variable corresponding to that observation.
 
-We utilize the xts package in this case for easy pre-processing of the data.frame by time.
-
-```{r scale_prices}
+## ----scale_prices--------------------------------------------------------
 # Scale all prices in the data.frame: scaled_com
 scaled_com <- com %>%
   select(-Date) %>%
@@ -95,8 +70,8 @@ scaled_com <- com %>%
 
 # Observe the first 6 observations of scaled_com
 head(scaled_com)
-```
-```{r convert_to_xts}
+
+## ----convert_to_xts------------------------------------------------------
 # Convert the data.frame to an xts object: com_xts
 com_xts <- as.xts(scaled_com[, -1], order.by = as.Date(com$Date))
 
@@ -108,8 +83,8 @@ com_xts_monthly <- to_period(com_xts_sub, period = "months", OHLC = FALSE)
 
 # View the first 6 observations of the xts object
 head(com_xts_monthly)
-```
-```{r viz_prices, fig.height=5, fig.width=8, fig.align="center"}
+
+## ----viz_prices, fig.height=5, fig.width=8, fig.align="center"-----------
 # Convert the xts object back to a data.frame: com_monthly_df
 com_monthly_df <- as.data.frame(com_xts_monthly)
 
@@ -128,22 +103,16 @@ com_monthly_df %>%
       x = "Date",
       y = "Scaled Price"
     )
-```
 
-From this visualization from prices, it is not immediately obvious which set of commodities move in tandem with one another. We can, however, identify some salient facts such as the outlier status of the CME Aluminium Contract.
 
-As the final stage of pre-processing, we transpose the data.frame to show time as columns and commodities as rows.
-
-```{r transpose_df}
+## ----transpose_df--------------------------------------------------------
 # Transpose the data.frame s.t. Dates are columns: com_final
 com_t <- as.data.frame(t(com_monthly_df))
 
 head(com_t)
-```
 
-### 3. Hierarchical Clustering
 
-```{r generate_dendrogram, fig.height=5, fig.width=8, fig.align="center"}
+## ----generate_dendrogram, fig.height=5, fig.width=8, fig.align="center"----
 
 # Define a theoretical number of clusters: k
 K = 4
@@ -160,8 +129,8 @@ dend_com <- as.dendrogram(hc_com)
 # Plot the dendrogram
 dend_colored <- color_branches(dend_com, k = K)
 plot(dend_colored, main = "Clustered Dendrogram of Commodity Price Action")
-```
-```{r tidy_with_hc}
+
+## ----tidy_with_hc--------------------------------------------------------
 # Convert commodity IDs from rownames to a new column: Commodity
 df_com <- rownames_to_column(as.data.frame(com_t), var = "Commodity")
 
@@ -182,13 +151,13 @@ tidy_com_hc <- gather(
 
 # View the first 6 observations of tidy_com
 head(tidy_com_hc)
-```
-```{r view_clusters_hc}
+
+## ----view_clusters_hc----------------------------------------------------
 # View cluster assignments
 sort(cut_com)
-```
 
-```{r viz_hc_results, fig.height=5, fig.width=8, fig.align="center"}
+
+## ----viz_hc_results, fig.height=5, fig.width=8, fig.align="center"-------
 # Visualize each time series by Cluster Assignment
 tidy_com_hc %>% 
   mutate(Month = as.Date(Month)) %>% 
@@ -209,11 +178,9 @@ tidy_com_hc %>%
       color = "Cluster"
     ) +
     theme_classic()
-```
 
-### 4. K-Means Clustering: K Estimation
 
-```{r calculate_totwithinss}
+## ----calculate_totwithinss-----------------------------------------------
 # Estimate Total Within Sum of Squares per value of k
 tot_withinss <- map_dbl(1:10, function(k) {
   model <- kmeans(x = com_t, centers = k)
@@ -221,8 +188,8 @@ tot_withinss <- map_dbl(1:10, function(k) {
 })
 
 tot_withinss
-```
-```{r viz_elbow}
+
+## ----viz_elbow-----------------------------------------------------------
 # Create a data.frame containing both k and tot_withinss: elbow_df
 elbow_df <- data.frame(
   k = 1:10,
@@ -243,11 +210,9 @@ elbow_df %>%
     y = "Total Within Sum of Squares"
   ) +
   theme_minimal()
-```
 
-Analysis of the Elbow Plot suggests that both k = 2 and k = 4 are good contenders for estimated number of clusters.
 
-```{r calculate_sil}
+## ----calculate_sil-------------------------------------------------------
 # Estimate Silhouette Width per unit k
 sil_width <- map_dbl(2:10, function(k) {
   model <- pam(com_t, k = k)
@@ -255,8 +220,8 @@ sil_width <- map_dbl(2:10, function(k) {
 })
 
 sil_width
-```
-```{r viz_sil}
+
+## ----viz_sil-------------------------------------------------------------
 # Create a data.frame containing both average silhouette wdith and k: sil_df
 sil_df <- data.frame(
   k = 2:10,
@@ -277,15 +242,9 @@ sil_df %>%
     y = "Average Silhouette Wdith"
   ) +
   theme_minimal()
-```
 
-Similar to the Elbow Plot, analysis of the Average Silhouette Width per number of clusters suggests that k = 2, k = 4 and k =5 are all good estimations of the number of clusters.
 
-Given the similarities in the Elbow Plot and Average Silhouette Width plot, we theorize k = 4 for our K-Means Clustering analysis.
-
-### 5. K-Means Clustering: Cluster Assignment
-
-```{r km_clustering}
+## ----km_clustering-------------------------------------------------------
 # Build a K-Means Model with k = 4
 model_com_km <- kmeans(com_t, centers = 4)
 
@@ -294,8 +253,8 @@ clust_kmeans <- model_com_km$cluster
 
 # View the results of cluster assignment with K-Means
 clust_kmeans
-```
-```{r tidy_with_km}
+
+## ----tidy_with_km--------------------------------------------------------
 # Create a new column reflecting cluster assignments from clust_kmeans: clustered_com_km
 clustered_com_km <- mutate(df_com, Cluster = clust_kmeans)
 
@@ -310,12 +269,12 @@ tidy_com_km <- gather(
 
 # View the first 6 observations of tidy_com_km
 head(tidy_com_km)
-```
-```{r view_km_results}
+
+## ----view_km_results-----------------------------------------------------
 # View cluster assignments with K-Means Clustering
 sort(clust_kmeans)
-```
-```{r viz_kmeans}
+
+## ----viz_kmeans----------------------------------------------------------
 # Visualize each time series by Cluster Assignment
 tidy_com_km %>% 
   mutate(Month = as.Date(Month)) %>% 
@@ -336,25 +295,8 @@ tidy_com_km %>%
       color = "Cluster"
     ) +
     theme_classic()
-```
 
-### 6. Conclusions
 
-This preliminary exercise with Hierarchical and K-Means Clustering appears to suggest that: of the 18 selected commodity contracts, *there are broadly 4 clusters of commodities* whose price action resemble one another the most. 
-
-#### Cluster 4: CME Alumnium
-One example of such a cluster is the Chicage Mercantile Exchange Aluminium Contract, whose price behaviour is distinctly different from that of the other 17 commodities under analysis. In both the Hierarchical Clustering and K-Means Clustering Analysis, its price action stands out from the rest.
-
-#### Cluster 2: Brent, WTI, Henry Hub Gas, NBP Gas
-With respect to the analysis of individual clusters, an interesting hypothesis would be that Cluster 2 Commodities (E.g. Brent, WTI, Henry Hub, NBP, Gasoline, Copper etc.) are the commodities that depend more heavily on Macro factors. Historically, these assets (as benchmark commodity prices) tend to move more in tandem with the state of the global macroeconomic environment relative to assets found in other clusters (E.g. European Naphtha and Chinese Iron Ore).
-
-#### Cluster 3: Dubai Crude, SGX Fuel Oil, SHFE Copper, Iron Ore
-In the case of Cluster 3 commodities such SHFE Copper, SGX Fuel Oil and Iron Ore, their relationship to the Macro environment is less obvious. In fact, it could be argued that these commodities are more dependent on individual supply-demand dynamics as well as regional factors (E.g. IMO2020 for Fuel Oil prices and Chinese Government Policy for Iron Ore).
-
-#### Use-Cases
-Potential use-cases of this analysis would be to potentially design pairs-trading strategies around intra-cluster commodities as well as to use the movement of one asset as a predictor of another.
-
-```{r include=FALSE}
+## ----include=FALSE-------------------------------------------------------
 purl("unsupervised-learning-with-commodity-prices.Rmd")
-```
 
