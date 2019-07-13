@@ -10,10 +10,10 @@ This project attempts to utilize methods in Unsupervised Learning to deduce and 
 
 ## Usage
 
-Git clone to a local folder with
+Open the Command Prompt and git clone to a local folder with:
 
 `git clone https://github.com/NicholasTanWeiHong/unsupervised-learning-with-commodity-prices.git`
 
 Then, the code may be accessed from `unsupervised-learning-with-commodity-prices.R`
 
-Alternatively, open `unsupervised-learning-with-commodity-prices.md` in GitHub to view the analysis as a Markdown report.
+Alternatively, open `unsupervised-learning-with-commodity-prices.md` in GitHub to view the analysis as an RMarkdown Report.
